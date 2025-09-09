@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Profil{% endblock %}
+
+{% block content %}
+<div class="card shadow p-4">
+    <h3>Salom, {{ user.username }} 👋</h3>
+    <p>Email: {{ user.email }}</p>
+    <p>Rol: {{ user.get_role_display }}</p>
+
+    <hr>
+    <h4>Mening kurslarim</h4>
+    {% if enrollments %}
+    <ul class="list-group">
+        {% for e in enrollments %}
+        <li class="list-group-item">
+            <div class="d-flex justify-content-between">
+                <span><strong>{{ e.course.title }}</strong></span>
+                <span>{{ e.progress }}%</span>
+            </div>
+            <div class="progress my-2">
+                <div class="progress-bar" role="progressbar" style="width: {{ e.progress }}%;"
+                    aria-valuenow="{{ e.progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+
+            {% if e.progress == 100 %}
+            {% if e.cert_request %}
+            {% if e.cert_request.status == "approved" and e.issued_cert %}
+            <a class="btn btn-sm btn-primary" href="{{ e.issued_cert.pdf_file.url }}" target="_blank">
+                📄 Sertifikatni yuklab olish
+            </a>
+            {% elif e.cert_request.status == "pending" %}
+            <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#statusModal"
+                data-message="Siz bu kurs uchun ariza yuborgansiz. Javob 24 soat ichida beriladi.">
+                ⏳ Ariza yuborilgan
+            </button>
+            {% elif e.cert_request.status == "rejected" %}
+            <span class="badge bg-danger">❌ Ariza rad etilgan</span>
+            {% endif %}
+            {% else %}
+            <form method="post" action="{% url 'request_certificate' e.course.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-success" data-bs-toggle="modal"
+                    data-bs-target="#statusModal" data-message="Ariza qabul qilindi! Natija 24 soat ichida yuboriladi.">
+                    🎓 Sertifikatga ariza topshirish
+                </button>
+            </form>
+            {% endif %}
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>Kurslarga yozilmagansiz.</p>
+    {% endif %}
+
+    <hr>
+    <h4>Mening sertifikat arizalarim</h4>
+    {% if enrollments %}
+    <ul class="list-group">
+        {% for e in enrollments %}
+        {% if e.cert_request %}
+        <li class="list-group-item">
+            <strong>{{ e.course.title }}</strong> –
+            <span class="badge 
+                    {% if e.cert_request.status == 'approved' %} bg-success 
+                    {% elif e.cert_request.status == 'pending' %} bg-warning 
+                    {% else %} bg-danger {% endif %}">
+                {{ e.cert_request.get_status_display }}
+            </span>
+            {% if e.cert_request.status == "approved" and e.issued_cert %}
+            <a href="{{ e.issued_cert.pdf_file.url }}" class="btn btn-sm btn-primary ms-2" target="_blank">
+                📥 Yuklab olish
+            </a>
+            {% endif %}
+        </li>
+        {% endif %}
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>Sizda hali sertifikat arizasi yo‘q.</p>
+    {% endif %}
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="statusModalLabel">📢 Xabar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Yopish"></button>
+            </div>
+            <div class="modal-body" id="statusMessage">
+                <!-- Dinamik xabar shu yerda chiqadi -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Yopish</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var modal = document.getElementById('statusModal');
+        modal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var message = button.getAttribute('data-message');
+            document.getElementById('statusMessage').innerText = message;
+        });
+    });
+</script>
+
+{% endblock %}

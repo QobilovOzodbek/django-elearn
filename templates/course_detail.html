@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>{{ course.title }}</h2>
+
+    {% if is_enrolled %}
+    <p>Kurs progressi: {{ progress }}%</p>
+
+    <!-- Modullar va darslar ro‘yxati -->
+    {% for m in modules %}
+    <div class="mb-4">
+        <h4>{{ m.title }}</h4>
+        <ul class="list-group">
+            {% for l in m.lessons.all %}
+            <li class="list-group-item">
+                <a href="{% url 'lesson_detail' course.id l.id %}">
+                    {{ l.title }}
+                </a>
+            </li>
+            {% empty %}
+            <li class="list-group-item">Darslar yo‘q</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <p>Siz bu kursga yozilmagansiz.</p>
+
+    {% if user.is_authenticated %}
+    <!-- Agar login bo‘lsa to‘g‘ridan-to‘g‘ri yoziladi -->
+    <a href="{% url 'enroll_course' course.id %}" class="btn btn-success">
+        📚 Kursga yozilish
+    </a>
+    {% else %}
+    <!-- Login qilmagan bo‘lsa avval login sahifaga yo‘naltiramiz -->
+    <a href="{% url 'login' %}?next={% url 'enroll_course' course.id %}" class="btn btn-warning">
+        🔑 Avval login qiling
+    </a>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}{{ lesson.title }}{% endblock %}
+
+{% block content %}
+<!-- Progress bar (kurs bo‘yicha) -->
+{% if progress is not None %}
+<div class="mb-3">
+    <div class="d-flex justify-content-between">
+        <small>Kurs progressi</small>
+        <small>{{ progress }}%</small>
+    </div>
+    <div class="progress">
+        <div class="progress-bar" role="progressbar" style="width: {{ progress }}%;" aria-valuenow="{{ progress }}"
+            aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Chap panel (Modullar va darslar) -->
+    <div class="col-md-3">
+        {% for m in course.modules.all %}
+        <div class="mb-3">
+            <h6 class="text-primary">{{ m.title }}</h6>
+            <div class="list-group">
+                {% for l in m.lessons.all %}
+                <a href="{% url 'lesson_detail' course.id l.id %}"
+                    class="list-group-item list-group-item-action {% if l.id == lesson.id %}active{% endif %}">
+                    {{ l.title }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Kontent -->
+    <div class="col-md-9">
+        <div class="card shadow p-4">
+            <h3 class="mb-3">{{ lesson.title }}</h3>
+
+            {% if lesson.embed_url %}
+            <div class="ratio ratio-16x9 mb-3">
+                <iframe src="{{ lesson.embed_url }}" frameborder="0" allowfullscreen></iframe>
+            </div>
+            <p>
+                Agar video ochilmasa:
+                <a href="{{ lesson.video_url }}" target="_blank" class="btn btn-danger">🎥 YouTube’da ko‘rish</a>
+            </p>
+            {% endif %}
+            
+            
+
+            {% if lesson.content %}
+            <div class="mb-3">{{ lesson.content|safe }}</div>
+            {% endif %}
+
+            <div class="d-flex align-items-center gap-2 mb-3">
+                {% if is_completed %}
+                <span class="badge bg-success">Dars tugallangan</span>
+                {% else %}
+                <form method="post" action="{% url 'complete_lesson' course.id lesson.id %}">
+                    {% csrf_token %}
+                    <button class="btn btn-success">✅ Darsni tugatish</button>
+                </form>
+                {% endif %}
+            </div>
+
+            <!-- Navigatsiya -->
+            <div class="d-flex justify-content-between mt-2">
+                {% if prev_lesson %}
+                <a href="{% url 'lesson_detail' course.id prev_lesson.id %}" class="btn btn-outline-primary">&laquo;
+                    Oldingi</a>
+                {% else %}
+                <span></span>
+                {% endif %}
+
+                {% if next_lesson %}
+                <a href="{% url 'lesson_detail' course.id next_lesson.id %}" class="btn btn-primary">Keyingi &raquo;</a>
+                {% else %}
+                <!-- Modul oxiri: “Modulni yakunlash” -->
+                <form method="post" action="{% url 'complete_module' course.id lesson.module.id %}">
+                    {% csrf_token %}
+                    <button class="btn btn-warning">🏁 Modulni yakunlash</button>
+                </form>
+                {% endif %}
+            </div>
+
+            {% if not next_lesson and next_module_first %}
+            <div class="mt-2 text-muted">
+                Yakunlaganingizdan so‘ng keyingi modul: <strong>{{ next_module_first.module.title }}</strong>, 1-dars:
+                <em>{{ next_module_first.title }}</em>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
